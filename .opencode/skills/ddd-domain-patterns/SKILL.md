@@ -54,6 +54,7 @@ El código del dominio NO debe importar: librerías de base de datos, clientes H
 | [references/REPOSITORIES.md](references/REPOSITORIES.md) | Patrón Repository (puerto): interfaces por aggregate, métodos de consulta |
 | [references/DOMAIN-SERVICES.md](references/DOMAIN-SERVICES.md) | Domain Services: lógica sin estado, cuándo usar vs métodos de entity |
 | [references/FACTORIES.md](references/FACTORIES.md) | Patrón Factory: encapsulando creación compleja de objetos |
+| [references/NAMING-CONVENTIONS.md](references/NAMING-CONVENTIONS.md) | Convenciones de nomenclatura: como nombrar modulos, aggregates, VOs, Commands, Queries, Controllers |
 
 ## Plantillas
 

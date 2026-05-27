@@ -147,3 +147,22 @@ class InMemoryCommandBus implements CommandBus:
 4. **Commands con comportamiento**: Validación o reglas de negocio en el Command DTO
 5. **Handler dependiendo de adaptadores concretos**: Depende de interfaces (puertos)
 6. **Sin command ID**: No se puede implementar idempotencia
+
+## Separacion Handler → Application Service
+
+En el patron CQRS del proyecto Codely, el CommandHandler **NO orquesta directamente**. Sigue un patron de 3 capas:
+
+```
+Command (DTO) → CommandHandler (Traductor) → Application Service (Orquestador)
+```
+
+- **Command**: Solo datos primitivos (strings, ints)
+- **CommandHandler**: Traduce primitivos → Value Objects del dominio, delega al Application Service
+- **Application Service** (ej: `CourseCreator`): Crea el aggregate, persiste via Repository, publica eventos via EventBus
+
+Esta separacion permite:
+- **Testabilidad**: Test de traduccion (Handler) separado de test de orquestacion (Service)
+- **Reutilizacion**: El mismo Application Service puede invocarse desde un Subscriber, CLI o Handler
+- **Responsabilidad unica**: Cada capa tiene una sola responsabilidad
+
+Para el patron completo con ejemplos reales, consulta [APPLICATION-SERVICES.md](APPLICATION-SERVICES.md).

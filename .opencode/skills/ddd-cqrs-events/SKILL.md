@@ -39,7 +39,7 @@ Infrastructure → Application → Domain
 
 1. Los **Commands** se nombran de forma imperativa: `CreateCourse`, `UpdateUser`, `DeleteOrder`. Son DTOs simples.
 2. **Los Commands devuelven void.** Si se necesitan datos después de un command, emite una query separada.
-3. **Un CommandHandler por Command.** Mantén los handlers delgados: valida, carga el aggregate, llama al método de dominio, guarda, publica eventos.
+3. **Un CommandHandler por Command.** El Handler es un **traductor delgado**: convierte primitivos del Command en Value Objects del dominio y delega en el Application Service. El Application Service es el **orquestador real** (crea aggregates, persiste, publica eventos). Para el patron completo de 3 capas, consulta [references/APPLICATION-SERVICES.md](references/APPLICATION-SERVICES.md).
 4. Las **Queries** se nombran como preguntas: `FindCourse`, `SearchUsers`, `GetAllOrders`.
 5. El **EventBus** publica eventos DESPUÉS de una persistencia exitosa. Nunca antes.
 6. Los **DomainEventSubscribers** reaccionan a eventos de otros aggregates/contextos. Mantenlos idempotentes.
@@ -56,6 +56,7 @@ Infrastructure → Application → Domain
 | [references/EVENT-SUBSCRIBERS.md](references/EVENT-SUBSCRIBERS.md) | Patrón DomainEventSubscriber, comunicación entre contextos |
 | [references/CDC-OUTBOX.md](references/CDC-OUTBOX.md) | Patrón CDC/Outbox para publicación confiable de eventos |
 | [references/CRITERIA-PATTERN.md](references/CRITERIA-PATTERN.md) | Criteria, Filters, Order para consultas flexibles de repositorio |
+| [references/APPLICATION-SERVICES.md](references/APPLICATION-SERVICES.md) | Patron de 3 capas CQRS: Command → Handler (traductor) → Application Service (orquestador) |
 
 ## Skills Relacionadas
 
