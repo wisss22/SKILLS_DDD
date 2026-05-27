@@ -50,6 +50,7 @@ Catálogo completo de todos los patrones de diseño cubiertos por el ecosistema 
 | **Persistence Adapter** | Implementa un port Repository con una base de datos específica | Para almacenar/recuperar aggregates con bases de datos reales |
 | **Messaging Adapter** | Implementa EventBus con un message broker específico | Para publicar/consumir events con message brokers reales |
 | **Decorator** | Envuelve un componente para añadir comportamiento sin modificarlo | Para preocupaciones transversales: caché, logging, monitoreo |
+| **Facade Adapter** | Implementa un puerto de grano grueso ocultando múltiples dependencias técnicas | Cuando un Caso de Uso acumula 4+ dependencias de infraestructura y la orquestación técnica es compleja |
 | **Monitoring** | Recopila métricas sobre el comportamiento del sistema | Para observabilidad: conteo de events, duración de handlers |
 
 ## Patrones de Puntos de Entrada → `ddd-entrypoints`

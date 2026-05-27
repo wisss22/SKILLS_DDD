@@ -86,6 +86,22 @@ Errores comunes al aplicar DDD, CQRS y Arquitectura Hexagonal. Cada anti-patrón
 | **Solución** | Los handlers orquestan: validar entrada, cargar aggregate, llamar método de dominio, guardar. El paso "llamar método de dominio" debería ser una línea. |
 | **Detección** | Handler con >15 líneas de lógica de negocio (sin contar validación/plomería). |
 
+### Constructor Over-Injection
+| Aspecto | Descripción |
+|---|---|
+| **Problema** | Un Caso de Uso recibe 5+ dependencias en su constructor, muchas de ellas técnicas y de bajo nivel (librerías externas, SDKs, clientes HTTP). |
+| **Por qué duele** | El Caso de Uso se vuelve ilegible, difícil de testear (hay que mockear demasiadas librerías) y frágil ante cambios de infraestructura. La intención de negocio se pierde entre dependencias técnicas. |
+| **Solución** | Agrupa dependencias técnicas relacionadas tras un puerto de grano grueso usando el Patrón Fachada. Las dependencias de dominio (servicios de dominio, repositories) permanecen explícitas en el constructor. |
+| **Detección** | Constructor de handler con >5 parámetros, donde más de 3 son librerías o herramientas técnicas (no puertos de dominio). |
+
+### Fachada Ocultando Lógica de Negocio
+| Aspecto | Descripción |
+|---|---|
+| **Problema** | Un puerto de grano grueso o Adaptador Fachada encapsula servicios de dominio en su interior, haciendo invisible qué reglas de negocio se están aplicando. |
+| **Por qué duele** | Al leer el constructor del Caso de Uso no se entiende qué reglas de dominio se ejecutan. El modelo de dominio se vuelve opaco. La Fachada mezcla orquestación técnica con lógica de negocio. |
+| **Solución** | La Fachada solo encapsula orquestación técnica (librerías externas, APIs, SDKs). Los servicios de dominio se inyectan explícitamente en el Caso de Uso o se invocan directamente. Si el Caso de Uso necesita demasiados servicios de dominio, revisa si el modelo de dominio está anémico. |
+| **Detección** | Fachada cuyo método internamente invoca servicios de dominio (ej. `PricingService`, `FraudDetector`, `InventoryValidator`). El constructor del Caso de Uso oculta reglas de negocio tras un nombre genérico. |
+
 ## Anti-Patrones de Infrastructure
 
 ### Fuga de Detalles de Persistencia hacia Arriba

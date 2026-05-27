@@ -25,6 +25,7 @@ La infraestructura depende DE las capas internas (implementa sus puertos). Las c
 |---|---|---|
 | **Adaptador de Persistencia** | Interfaz Repository | Capa de Dominio |
 | **Adaptador de Mensajería** | Interfaz EventBus | Capa de Dominio |
+| **Adaptador Fachada** | Puerto de grano grueso que oculta múltiples dependencias técnicas | Capa de Aplicación |
 | **Decorator** | Misma interfaz que envuelve | Capa de Dominio (puerto) |
 | **Monitoreo** | Transversal (envuelve otros adaptadores) | Infraestructura |
 
@@ -36,6 +37,7 @@ La infraestructura depende DE las capas internas (implementa sus puertos). Las c
 4. **Los decoradores envuelven puertos de forma transparente.** Un decorador de caché o de monitoreo implementa el mismo puerto y delega en el adaptador real.
 5. **Múltiples adaptadores por puerto.** Puedes tener implementaciones MySQL, Elasticsearch e InMemory de la misma interfaz Repository. Intercámbialas mediante configuración de DI.
 6. **Prueba cada adaptador de forma aislada.** Cada implementación de adaptador tiene su propia prueba de integración.
+7. **Usa puertos de grano grueso cuando un handler acumula 4+ dependencias técnicas.** Un solo puerto (ej. `DocumentAnalyzerPort`) reemplaza múltiples puertos de grano fino. El Adaptador Fachada oculta la orquestación técnica en Infraestructura. NUNCA ocultes servicios de dominio tras una fachada — deben ser explícitos en el constructor del Caso de Uso.
 
 ## Archivos de Referencia
 
@@ -45,6 +47,7 @@ La infraestructura depende DE las capas internas (implementa sus puertos). Las c
 | [references/MESSAGING.md](references/MESSAGING.md) | Adaptadores de mensajería: configuración de broker, serialización de eventos, consumidores |
 | [references/DECORATOR-PATTERN.md](references/DECORATOR-PATTERN.md) | Patrón Decorator: caché, monitoreo, composición de adaptadores |
 | [references/MONITORING.md](references/MONITORING.md) | Monitoreo: recolección de métricas, integración con Prometheus |
+| [references/FACADE-PATTERN.md](references/FACADE-PATTERN.md) | Patrón Fachada: puertos de grano grueso, adaptadores compuestos, orquestación técnica vs de negocio |
 
 ## Skills Relacionadas
 
@@ -53,4 +56,5 @@ La infraestructura depende DE las capas internas (implementa sus puertos). Las c
 | Necesitas definir interfaces de repositorio (puertos) | `ddd-domain-patterns` |
 | Necesitas la definición del EventBus | `ddd-cqrs-events` |
 | Necesitas probar estos adaptadores | `ddd-testing` |
+| Necesitas diseñar puertos de aplicación (grano grueso) | `ddd-domain-patterns` |
 | Necesitas cablear adaptadores en la aplicación | `ddd-entrypoints` |
