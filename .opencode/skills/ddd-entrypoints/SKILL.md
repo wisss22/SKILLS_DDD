@@ -60,10 +60,22 @@ HTTP Request
 | [references/CLI-COMMANDS.md](references/CLI-COMMANDS.md) | Comandos CLI: puntos de entrada de consola, trabajos en segundo plano |
 | [references/EVENT-CONSUMERS.md](references/EVENT-CONSUMERS.md) | Consumidores de eventos: configuración de broker, procesos de larga duración, configuración de supervisor |
 
+## Scaffolding de una Nueva App
+
+Si la tarea es **crear una app completa desde cero** para un nuevo bounded context (no solo un controller o comando dentro de una app existente), carga primero `ddd-app-bootstrap`. Ese skill proporciona:
+
+- Estructura de carpetas `apps/<bc>/backend/`
+- Templates de Kernel, bootstrap, entrypoints HTTP/CLI
+- Configuracion base de DI y rutas
+- Explicacion de por que cada BC tiene su propio kernel independiente
+
+Una vez scaffoldada la app, vuelve a `ddd-entrypoints` para crear los controllers, comandos CLI y consumidores dentro de la nueva app.
+
 ## Habilidades Relacionadas
 
 | Tarea | Cargar |
 |---|---|
+| Crear una app nueva para un BC desde cero | `ddd-app-bootstrap` |
 | Necesitas los commands/queries que se despachan | `ddd-cqrs-events` |
 | Necesitas infraestructura para cablear en DI | `ddd-infrastructure` |
 | Necesitas probar estos controladores de extremo a extremo | `ddd-testing` |

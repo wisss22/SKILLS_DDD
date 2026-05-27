@@ -22,7 +22,8 @@ Este skill es solo un **router**. No contiene reglas de implementación. Todas l
 | Crear o modificar Command/CommandHandler, Query/QueryHandler, EventBus, DomainEventSubscriber, CDC Outbox o Criteria/Filters | `ddd-cqrs-events` |
 | Escribir CUALQUIER test (unitario, integración, arquitectura, BDD), crear Object Mothers o configurar infraestructura de testing | `ddd-testing` |
 | Crear adaptadores de persistencia, adaptadores de message broker, decorators de caché o wrappers de monitoreo | `ddd-infrastructure` |
-| Crear controladores HTTP, comandos CLI, consumidores de eventos, configuración de enrutamiento o bootstrap de aplicación | `ddd-entrypoints` |
+| Crear controladores HTTP, comandos CLI, consumidores de eventos, configuración de enrutamiento o bootstrap de aplicación **dentro de una app ya existente** | `ddd-entrypoints` |
+| **Crear una nueva app/punto de entrada para un bounded context desde cero** (scaffold de carpetas, kernel, entrypoints, DI base) | `ddd-app-bootstrap` |
 
 ## Principios de Arquitectura (Referencia Rápida)
 

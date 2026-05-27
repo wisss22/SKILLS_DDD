@@ -1,0 +1,83 @@
+imports:
+  # Carga la configuracion DI compartida del bounded context desde src/
+  - { resource: '../../../../src/<BC>/Shared/Infrastructure/DependencyInjection/<bc>_services.yaml' }
+
+services:
+  _defaults:
+    autoconfigure: true
+    autowire: true
+
+  # ============================================================
+  # TAGGING AUTOMATICO DE HANDLERS Y SUBSCRIBERS
+  # ============================================================
+  # Cualquier clase que implemente estas interfaces recibe
+  # automaticamente un tag, permitiendo que el bus la descubra.
+  _instanceof:
+    App\Shared\Domain\Bus\Event\DomainEventSubscriber:
+      tags: ['app.domain_event_subscriber']
+
+    App\Shared\Domain\Bus\Command\CommandHandler:
+      tags: ['app.command_handler']
+
+    App\Shared\Domain\Bus\Query\QueryHandler:
+      tags: ['app.query_handler']
+
+  # ============================================================
+  # AUTO-REGISTRO DE ENTRYPOINTS
+  # ============================================================
+  App\Apps\<BC>\Backend\Controller\:
+    resource: '../src/Controller'
+    tags: ['controller.service_arguments']
+
+  App\Apps\<BC>\Backend\Command\:
+    resource: '../src/Command'
+    tags: ['console.command']
+
+  # ============================================================
+  # WIRING DEL NUCLEO (Domain + Application + Infrastructure)
+  # ============================================================
+  # Carga todo el codigo de src/Shared y src/<BC> como servicios
+  # auto-registrados, resolviendo dependencias por tipo.
+  App\Shared\:
+    resource: '../../../../src/Shared'
+
+  App\<BC>\:
+    resource: '../../../../src/<BC>'
+
+  # ============================================================
+  # CONFIGURACION MANUAL DE INFRAESTRUCTURA
+  # ============================================================
+  # Define aqui adaptadores que necesitan parametros especificos
+  # (host, puerto, credenciales) y no pueden auto-registrarse.
+  #
+  # Ejemplo: conexion a RabbitMQ
+  # App\Shared\Infrastructure\Bus\Event\RabbitMq\RabbitMqConnection:
+  #   arguments:
+  #     - host: '%env(RABBITMQ_HOST)%'
+  #       port: '%env(RABBITMQ_PORT)%'
+  #       login: '%env(RABBITMQ_LOGIN)%'
+  #       password: '%env(RABBITMQ_PASSWORD)%'
+
+  # ============================================================
+  # LISTENERS / MIDDLEWARES DEL FRAMEWORK
+  # ============================================================
+  # Ejemplo: parsear body JSON automaticamente
+  # App\Shared\Infrastructure\Symfony\AddJsonBodyToRequestListener:
+  #   tags:
+  #     - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
+  #
+  # Ejemplo: mapear excepciones de dominio a respuestas HTTP
+  # App\Shared\Infrastructure\Symfony\ApiExceptionListener:
+  #   tags:
+  #     - { name: kernel.event_listener, event: kernel.exception, method: onException }
+
+  # ============================================================
+  # IMPLEMENTATION SELECTOR
+  # ============================================================
+  # Alias de puertos (interfaces de dominio) a adaptadores concretos.
+  # Cambiar estas lineas permite cambiar toda la infraestructura
+  # (ej: RabbitMQ -> InMemory para tests).
+  #
+  # Ejemplo:
+  # App\Shared\Domain\Bus\Event\EventBus:
+  #   '@App\Shared\Infrastructure\Bus\Event\RabbitMq\RabbitMqEventBus'

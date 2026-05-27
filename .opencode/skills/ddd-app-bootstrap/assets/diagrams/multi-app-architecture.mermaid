@@ -1,0 +1,61 @@
+graph TD
+    subgraph Monorepo["Monorepo"]
+        subgraph Source["src/ — Nucleo de Dominio"]
+            SHARED["Shared/<br/>Tipos base, Buses (interfaces),<br/>Criteria, Utils"]
+            BC1["Mooc/<br/>Entidades, Casos de Uso,<br/>Repositorios (interfaces)"]
+            BC2["Backoffice/<br/>Entidades, Casos de Uso,<br/>Repositorios (interfaces)"]
+        end
+
+        subgraph Apps["apps/ — Puntos de Entrada"]
+            subgraph App1["mooc/backend/"]
+                KERNEL1["MoocBackendKernel<br/>(Application Bootstrapper)"]
+                CONFIG1["config/<br/>services.yaml + routes/"]
+                CTRL1["src/Controller/<br/>Courses, HealthCheck..."]
+                CLI1["bin/console<br/>CLI Entrypoint"]
+                HTTP1["public/index.php<br/>HTTP Entrypoint"]
+            end
+
+            subgraph App2["backoffice/backend/"]
+                KERNEL2["BackofficeBackendKernel<br/>(Application Bootstrapper)"]
+                CONFIG2["config/<br/>services.yaml + routes/"]
+                CTRL2["src/Controller/<br/>Courses, HealthCheck..."]
+                CLI2["bin/console<br/>CLI Entrypoint"]
+                HTTP2["public/index.php<br/>HTTP Entrypoint"]
+            end
+        end
+
+        BOOT["apps/bootstrap.php<br/>(Shared Bootstrap)"]
+    end
+
+    CLIENT1["Cliente HTTP<br/>API REST"] --> HTTP1
+    CLIENT2["Terminal<br/>CLI"] --> CLI1
+    CLIENT3["Cliente HTTP<br/>API REST"] --> HTTP2
+    CLIENT4["Terminal<br/>CLI"] --> CLI2
+
+    HTTP1 --> BOOT
+    CLI1 --> BOOT
+    HTTP2 --> BOOT
+    CLI2 --> BOOT
+
+    BOOT --> KERNEL1
+    BOOT --> KERNEL2
+
+    KERNEL1 --> CONFIG1
+    KERNEL2 --> CONFIG2
+
+    CONFIG1 --> SHARED
+    CONFIG1 --> BC1
+    CONFIG2 --> SHARED
+    CONFIG2 --> BC2
+
+    CTRL1 -->|CommandBus / QueryBus| BC1
+    CTRL2 -->|CommandBus / QueryBus| BC2
+
+    SHARED -.->|Tipos base| BC1
+    SHARED -.->|Tipos base| BC2
+
+    style SHARED fill:#e1f5fe
+    style BC1 fill:#e8f5e9
+    style BC2 fill:#fff3e0
+    style KERNEL1 fill:#fce4ec
+    style KERNEL2 fill:#fce4ec

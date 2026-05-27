@@ -1,0 +1,44 @@
+# ============================================================
+# EJEMPLO: Definicion de rutas para un modulo
+# ============================================================
+# Copia este archivo como config/routes/<modulo>.yaml
+# y adapta los nombres, paths y controllers.
+#
+# Reglas:
+# - Un archivo YAML por modulo funcional
+# - Las rutas NUNCA van como anotaciones en los controllers
+# - Nombres de ruta en snake_case: {modulo}_{accion}
+# ============================================================
+
+<modulo>_put:
+    path: /<modulo>/{id}
+    controller: App\Apps\<BC>\Backend\Controller\<Module>\<Module>PutController
+    methods: PUT
+
+<modulo>_get:
+    path: /<modulo>
+    controller: App\Apps\<BC>\Backend\Controller\<Module>\<Module>GetController
+    methods: GET
+    defaults:
+        _format: json
+
+<modulo>_delete:
+    path: /<modulo>/{id}
+    controller: App\Apps\<BC>\Backend\Controller\<Module>\<Module>DeleteController
+    methods: DELETE
+
+# ============================================================
+# Ejemplo de ruta de health-check (recomendada en toda app)
+# ============================================================
+health_check_get:
+    path: /health-check
+    controller: App\Apps\<BC>\Backend\Controller\HealthCheck\HealthCheckGetController
+    methods: GET
+
+# ============================================================
+# Ejemplo de ruta de metricas (opcional, para monitoreo)
+# ============================================================
+metrics_get:
+    path: /metrics
+    controller: App\Apps\<BC>\Backend\Controller\Metrics\MetricsController
+    methods: GET
