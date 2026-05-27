@@ -1,0 +1,55 @@
+graph TD
+    subgraph Monorepo["Monorepo DDD"]
+        subgraph Level1["Nivel 1: src/Shared/ — Monorepo Shared Kernel"]
+            SHARED_DOMAIN["Shared/Domain/<br/>AggregateRoot, Uuid,<br/>DomainEvent, Criteria,<br/>CommandBus, EventBus"]
+            SHARED_INFRA["Shared/Infrastructure/<br/>Bus Impl, DoctrineRepository,<br/>RabbitMQ, Elasticsearch,<br/>ApiController, Logger"]
+        end
+
+        subgraph BC1["Bounded Context: Mooc"]
+            subgraph BC1_SHARED["Mooc/Shared/ — BC-Local Shared"]
+                BC1_S_DOMAIN["Domain/<br/>CourseId, VideoUrl"]
+                BC1_S_INFRA["Infrastructure/<br/>MoocEntityManagerFactory,<br/>mooc_services.yaml"]
+            end
+            BC1_MOD1["Courses/<br/>Domain, Application, Infra"]
+            BC1_MOD2["Videos/<br/>Domain, Application, Infra"]
+        end
+
+        subgraph BC2["Bounded Context: Backoffice"]
+            subgraph BC2_SHARED["Backoffice/Shared/ — BC-Local Shared"]
+                BC2_S_DOMAIN["Domain/<br/>(vacio en este proyecto)"]
+                BC2_S_INFRA["Infrastructure/<br/>backoffice_services.yaml<br/>⚠️ @todo: usa Mooc EM factory"]
+            end
+            BC2_MOD1["Courses/<br/>Domain, Application, Infra"]
+        end
+    end
+
+    %% Dependencias del Nivel 1
+    BC1_MOD1 -->|extiende| SHARED_DOMAIN
+    BC1_MOD2 -->|extiende| SHARED_DOMAIN
+    BC2_MOD1 -->|extiende| SHARED_DOMAIN
+    BC1_S_DOMAIN -->|extiende| SHARED_DOMAIN
+
+    %% Dependencias del Nivel 2
+    BC1_MOD1 -->|usa| BC1_S_DOMAIN
+    BC1_MOD2 -->|usa| BC1_S_DOMAIN
+
+    %% Infraestructura
+    BC1_MOD1 -->|cablea via| BC1_S_INFRA
+    BC1_MOD2 -->|cablea via| BC1_S_INFRA
+    BC2_MOD1 -->|cablea via| BC2_S_INFRA
+
+    BC1_S_INFRA -->|delega a| SHARED_INFRA
+    BC2_S_INFRA -->|delega a| SHARED_INFRA
+
+    %% Anti-patron
+    BC2_S_INFRA -.->|❌ Anti-patron: usa| BC1_S_INFRA
+
+    style SHARED_DOMAIN fill:#e1f5fe
+    style SHARED_INFRA fill:#e1f5fe
+    style BC1_S_DOMAIN fill:#e8f5e9
+    style BC1_S_INFRA fill:#e8f5e9
+    style BC2_S_DOMAIN fill:#fff3e0
+    style BC2_S_INFRA fill:#fff3e0
+    style BC1_MOD1 fill:#f3e5f5
+    style BC1_MOD2 fill:#f3e5f5
+    style BC2_MOD1 fill:#f3e5f5

@@ -432,3 +432,67 @@ class CourseId extends Uuid:
 7. **Value Objects de BC en Shared:** `CourseName` en `Shared/Domain/` cuando solo existe en el BC de Mooc. Si el concepto no es verdaderamente compartido, no pertenece a Shared.
 
 8. **Implementaciones concretas en Shared Application:** `InMemoryCommandBus` en `Shared/Application/` en lugar de `Shared/Infrastructure/`. Las implementaciones van en Infrastructure, las interfaces en Application o Domain.
+
+---
+
+# Shared en Dos Niveles: Monorepo vs BC-Local
+
+Ademas del Shared Kernel de monorepo (`src/Shared/`), los proyectos con multiples modulos dentro de un Bounded Context necesitan un **segundo nivel** de Shared local al BC (`src/<BC>/Shared/`).
+
+## Por Que Dos Niveles
+
+```
+src/
+├── Shared/                 ← Nivel 1: TODOS los BCs usan esto
+│   ├── Domain/             ← AggregateRoot, Uuid, CommandBus...
+│   └── Infrastructure/     ← Buses, Doctrine, Symfony base...
+│
+├── Mooc/
+│   ├── Shared/             ← Nivel 2: SOLO modulos de Mooc usan esto
+│   │   ├── Domain/         ← CourseId (usado por Courses y Videos)
+│   │   └── Infrastructure/ ← MoocEntityManagerFactory, mooc_services.yaml
+│   ├── Courses/
+│   └── Videos/
+│
+└── Backoffice/
+    ├── Shared/             ← Nivel 2: SOLO modulos de Backoffice usan esto
+    └── Courses/
+```
+
+## Que Va en BC-Local Shared (`src/<BC>/Shared/`)
+
+| Categoria | Ejemplo | Proposito |
+|---|---|---|
+| **Domain:** Tipos concretos compartidos entre modulos del BC | `CourseId` (usado por `Courses` y `Videos` en Mooc) | Evitar duplicar el tipo en cada modulo |
+| **Infrastructure:** EntityManager factory del BC | `MoocEntityManagerFactory` | Escanear modulos del BC para Doctrine |
+| **Infrastructure:** Scanners de modulos | `DoctrinePrefixesSearcher`, `DbalTypesSearcher` | Descubrir entidades y tipos por convencion |
+| **Infrastructure:** DI config del BC | `mooc_services.yaml` | Centralizar wiring de infraestructura |
+
+## Que NO Va en BC-Local Shared
+
+- **Codigo usado por otro BC** — Si Backoffice necesita algo de `Mooc\Shared\`, ese codigo debe moverse a monorepo `Shared\`. Importar `Mooc\Shared\` desde Backoffice es un anti-patron.
+- **Entidades de un solo modulo** — Si `Course` solo lo usa `Courses/`, vive en `Courses/Domain/`, no en `Shared/`.
+- **Casos de uso** — Los handlers pertenecen a cada modulo (`Courses/Application/`).
+
+## Regla de Decision: ¿Monorepo Shared o BC-Local Shared?
+
+```
+¿Este codigo lo necesitan 2+ Bounded Contexts DISTINTOS?
+├─ SI → Monorepo Shared (src/Shared/)
+└─ NO → ¿Lo necesitan 2+ modulos del MISMO BC?
+         ├─ SI → BC-Local Shared (src/<BC>/Shared/)
+         └─ NO → Dentro del modulo que lo usa
+```
+
+## Anti-Patron: BC Importando Shared de Otro BC
+
+```yaml
+# ❌ MAL: backoffice_services.yaml importando MoocEntityManagerFactory
+services:
+    Doctrine\ORM\EntityManager:
+        factory: [ CodelyTv\Mooc\Shared\Infrastructure\Doctrine\MoocEntityManagerFactory, create ]
+```
+
+Si Backoffice necesita su propio EntityManager, debe tener su propio `BackofficeEntityManagerFactory` en `src/Backoffice/Shared/Infrastructure/Doctrine/`. Si el codigo es identico y ambos BCs lo necesitan, promover a monorepo `src/Shared/Infrastructure/Doctrine/`.
+
+Para scaffolding y validacion de la estructura Shared en dos niveles, consulta la skill `ddd-shared-kernel`.

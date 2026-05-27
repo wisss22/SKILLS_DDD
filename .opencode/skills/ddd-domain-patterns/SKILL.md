@@ -65,4 +65,5 @@ Carga primero la skill `ddd-backend` para las plantillas base: [entity.pseudo](.
 |---|---|
 | Necesitas patrones Command/Query para la capa de aplicación | `ddd-cqrs-events` |
 | Necesitas probar objetos de dominio | `ddd-testing` |
+| Necesitas organizar Shared Domain en dos niveles | `ddd-shared-kernel` |
 | ¿No sabes dónde va el código? | Carga `ddd-backend` y usa su árbol de decisión |

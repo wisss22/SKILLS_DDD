@@ -1,0 +1,41 @@
+# ============================================================
+# <bc>_services.yaml
+# Configuracion de infraestructura compartida del Bounded Context <BC>.
+#
+# Este archivo es importado por apps/<bc>/backend/config/services.yaml
+# Centraliza la configuracion de:
+# - EntityManager del BC (factory, conexion, tags)
+# - Aliases de repositorios (Implementation Selector)
+# - Servicios de infraestructura especificos del BC
+#
+# Equivalente agnostico:
+# - Spring Boot: Clase @Configuration con @Bean + @EnableJpaRepositories
+# - NestJS: TypeOrmModule.forRoot() + providers en @Module()
+# - Laravel: DatabaseServiceProvider con bindings de repositorios
+# ============================================================
+
+services:
+  # ─── EntityManager del Bounded Context ───
+  # Cada BC tiene su propio factory que escanea sus modulos.
+  # NUNCA reutilizar el factory de otro BC (anti-patron).
+  Doctrine\ORM\EntityManager:
+    factory: [ App\<BC>\Shared\Infrastructure\Doctrine\<BC>EntityManagerFactory, create ]
+    arguments:
+      - driver: '%env(<BC>_DATABASE_DRIVER)%'
+        host: '%env(<BC>_DATABASE_HOST)%'
+        port: '%env(<BC>_DATABASE_PORT)%'
+        dbname: '%env(<BC>_DATABASE_NAME)%'
+        user: '%env(<BC>_DATABASE_USER)%'
+        password: '%env(<BC>_DATABASE_PASSWORD)%'
+      - '%env(APP_ENV)%'
+    tags:
+      - { name: app.database_connection }
+    public: true
+
+  # ─── ALIASES DE REPOSITORIOS (Implementation Selector) ───
+  # Vincula la interfaz del puerto (Domain) con su adaptador concreto (Infrastructure).
+  # Cambiar una linea aqui permite sustituir toda la persistencia del BC.
+  #
+  # Ejemplo:
+  # App\<BC>\<Module>\Domain\<Entity>Repository:
+  #   '@App\<BC>\<Module>\Infrastructure\Persistence\Doctrine<Entity>Repository'

@@ -24,6 +24,7 @@ Este skill es solo un **router**. No contiene reglas de implementación. Todas l
 | Crear adaptadores de persistencia, adaptadores de message broker, decorators de caché o wrappers de monitoreo | `ddd-infrastructure` |
 | Crear controladores HTTP, comandos CLI, consumidores de eventos, configuración de enrutamiento o bootstrap de aplicación **dentro de una app ya existente** | `ddd-entrypoints` |
 | **Crear una nueva app/punto de entrada para un bounded context desde cero** (scaffold de carpetas, kernel, entrypoints, DI base) | `ddd-app-bootstrap` |
+| **Organizar cedigo compartido en Shared Kernel: decidir si va en monorepo (src/Shared/) o BC-local (src/\<BC\>/Shared/), crear EntityManager factories, DI config y validar estructura Shared** | `ddd-shared-kernel` |
 
 ## Principios de Arquitectura (Referencia Rápida)
 
