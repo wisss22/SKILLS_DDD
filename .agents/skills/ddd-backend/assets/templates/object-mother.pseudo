@@ -1,0 +1,195 @@
+# Object Mother Template (language-agnostic pseudocode)
+#
+# The Object Mother pattern creates test data with sensible defaults.
+# Each Mother can produce one or more variants of an object.
+# Tests override only the properties they care about.
+#
+# Key principles:
+#   - Mothers provide DEFAULT values (sensible, realistic)
+#   - Tests override specific fields via method parameters
+#   - A MotherCreator/DataFaker provides random but realistic values
+#   - Mothers call other Mothers for nested objects
+
+# ============================================
+# MOTHER CREATOR (shared random value generator)
+# ============================================
+
+class MotherCreator:
+    # Central random-value generator used by all Mothers.
+    # Ensures consistent, realistic test data across the project.
+    # Uses a library like Faker to generate realistic values.
+
+    static method random(): DataFaker
+        # Return a configured faker instance
+        return DataFaker.create()
+
+# ============================================
+# PRIMITIVE VALUE MOTHERS (building blocks)
+# ============================================
+
+class UuidMother:
+    static method create(value: string = null): string
+        return value ?? MotherCreator.random().uuid()
+
+class WordMother:
+    static method create(value: string = null): string
+        return value ?? MotherCreator.random().word()
+
+class IntegerMother:
+    static method create(value: int = null): int
+        return value ?? MotherCreator.random().numberBetween(1, 100)
+
+class BooleanMother:
+    static method create(value: bool = null): bool
+        return value ?? MotherCreator.random().boolean()
+
+class DateTimeMother:
+    static method create(value: DateTime = null): DateTime
+        return value ?? DateTime.now()
+
+    static method past(): DateTime
+        return DateTime.now().subtractDays(MotherCreator.random().numberBetween(1, 365))
+
+# ============================================
+# VALUE OBJECT MOTHERS
+# ============================================
+
+class [EntityName]IdMother:
+    static method create(value: string = null): [EntityName]Id
+        return new [EntityName]Id(UuidMother.create(value))
+
+class [EntityName]NameMother:
+    static method create(value: string = null): [EntityName]Name
+        return new [EntityName]Name(
+            value ?? MotherCreator.random().sentence(3)
+        )
+
+class CourseDurationMother:
+    static method create(value: int = null): CourseDuration
+        return new CourseDuration(
+            value ?? MotherCreator.random().numberBetween(1, 300)
+        )
+
+# ============================================
+# ENTITY / AGGREGATE MOTHER
+# ============================================
+
+class [EntityName]Mother:
+    # Creates an entity with sensible defaults.
+    # All parameters are optional - use defaults if not provided.
+
+    static method create(
+        id: [EntityName]Id = null,
+        name: [EntityName]Name = null,
+        duration: CourseDuration = null
+    ): [EntityName]
+        return [EntityName].create(
+            id: id ?? [EntityName]IdMother.create(),
+            name: name ?? [EntityName]NameMother.create(),
+            duration: duration ?? CourseDurationMother.create()
+        )
+
+    # --- Named Variants ---
+    # Provide specific variants for common test scenarios.
+    # These express INTENT: "give me a random X", "give me an archived X"
+
+    static method random(): [EntityName]
+        return [EntityName]Mother.create()
+
+    static method withName(name: string): [EntityName]
+        return [EntityName]Mother.create(
+            name: [EntityName]NameMother.create(name)
+        )
+
+    static method archived(): [EntityName]
+        entity = [EntityName]Mother.random()
+        entity.archive()
+        return entity
+
+    static method withDuration(duration: int): [EntityName]
+        return [EntityName]Mother.create(
+            duration: CourseDurationMother.create(duration)
+        )
+
+# ============================================
+# COMMAND / QUERY MOTHERS
+# ============================================
+
+class Create[EntityName]CommandMother:
+    static method create(
+        id: string = null,
+        name: string = null,
+        duration: int = null
+    ): Create[EntityName]Command
+        return new Create[EntityName]Command(
+            id: id ?? UuidMother.create(),
+            name: name ?? WordMother.create(),
+            duration: duration ?? IntegerMother.create()
+        )
+
+    static method random(): Create[EntityName]Command
+        return Create[EntityName]CommandMother.create()
+
+# ============================================
+# DOMAIN EVENT MOTHERS
+# ============================================
+
+class [EntityName]CreatedDomainEventMother:
+    static method fromEntity(entity: [EntityName]): [EntityName]CreatedDomainEvent
+        return new [EntityName]CreatedDomainEvent(
+            aggregateId: entity.id,
+            name: entity.name
+        )
+
+    static method create(
+        aggregateId: string = null,
+        name: string = null
+    ): [EntityName]CreatedDomainEvent
+        return new [EntityName]CreatedDomainEvent(
+            aggregateId: aggregateId ?? UuidMother.create(),
+            name: name ?? WordMother.create()
+        )
+
+    static method random(): [EntityName]CreatedDomainEvent
+        return [EntityName]CreatedDomainEventMother.create()
+
+# ============================================
+# USAGE IN TESTS
+# ============================================
+
+class Create[EntityName]CommandHandlerTest:
+    method testItCreatesACourse():
+        # Given: a command with specific values
+        command = Create[EntityName]CommandMother.create(
+            name: "Specific course name"  # Override only what matters
+        )
+
+        # When: the handler processes the command
+        self.handler.invoke(command)
+
+        # Then: the course was saved with the right values
+        savedEntity = self.repository.getLastSaved()
+        assert savedEntity.name.value() == "Specific course name"
+        assert savedEntity.id is not null  # Other fields use defaults, don't assert them
+
+    method testItCreatesWithDefaults():
+        # Given: a random command (uses all defaults)
+        command = Create[EntityName]CommandMother.random()
+
+        # When
+        self.handler.invoke(command)
+
+        # Then: it was persisted
+        self.repository.assertSaveWasCalled()
+
+# ============================================
+# KEY RULES
+# ============================================
+# 1. Every Mother provides sensible DEFAULTS for all fields
+# 2. Tests override ONLY the fields they care about
+# 3. Never assert on fields that use defaults (they're irrelevant)
+# 4. Use named variant methods for common scenarios: .random(), .archived(), .withX()
+# 5. Mothers call other Mothers (composition, not duplication)
+# 6. Mothers live in the TEST directory, mirroring the source structure
+# 7. One Mother per class. A Mother can have multiple variant methods.
+# 8. MotherCreator provides a SINGLE random-value generator for consistency

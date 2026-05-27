@@ -1,0 +1,68 @@
+```mermaid
+graph TB
+    subgraph "Entry Points (apps/)"
+        HTTP[HTTP Controller]
+        CLI[CLI Command]
+        CONSUMER[Event Consumer]
+    end
+
+    subgraph "Application Layer"
+        CB[CommandBus]
+        QB[QueryBus]
+        CH[CommandHandler]
+        QH[QueryHandler]
+        ES[DomainEventSubscriber]
+    end
+
+    subgraph "Domain Layer"
+        AG[Aggregate Root]
+        E[Entity]
+        VO[Value Object]
+        DE[Domain Event]
+        REPO_PORT[Repository Port]
+        EB_PORT[EventBus Port]
+        DS[Domain Service]
+        FACT[Factory]
+    end
+
+    subgraph "Infrastructure Layer"
+        PERSIST[Persistence Adapter]
+        MSG[Message Broker Adapter]
+        CACHE[Cache Decorator]
+        MONITOR[Monitoring Decorator]
+    end
+
+    %% Entry Points -> Application
+    HTTP -->|"dispatch(command)"| CB
+    HTTP -->|"ask(query)"| QB
+    CLI -->|"dispatch(command)"| CB
+    CONSUMER -->|"publish events"| EB_PORT
+
+    %% Application -> Domain
+    CB --> CH
+    QB --> QH
+    CH --> AG
+    CH --> REPO_PORT
+    QH --> REPO_PORT
+    ES --> AG
+    ES --> REPO_PORT
+
+    %% Domain internal
+    AG --> E
+    AG --> VO
+    AG --> DE
+    AG --> DS
+    AG --> FACT
+    DE --> EB_PORT
+
+    %% Infrastructure (adapters implement ports)
+    PERSIST -.->|"implements"| REPO_PORT
+    MSG -.->|"implements"| EB_PORT
+    CACHE -.->|"decorates"| REPO_PORT
+    MONITOR -.->|"decorates"| EB_PORT
+
+    %% Dependency direction (arrows point to dependencies)
+    %% Infrastructure depends on Domain (not vice versa)
+    PERSIST -->|"depends on"| AG
+    MSG -->|"depends on"| DE
+```

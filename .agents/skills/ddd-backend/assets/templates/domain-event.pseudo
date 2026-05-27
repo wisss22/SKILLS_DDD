@@ -1,0 +1,103 @@
+# Domain Event Template (language-agnostic pseudocode)
+#
+# Use this template when creating a new Domain Event.
+# Domain Events:
+#   - Represent something that HAPPENED (past tense)
+#   - Are IMMUTABLE
+#   - Carry the data needed for subscribers to react
+#   - Include the aggregate ID and event metadata
+
+class [AggregateName][VerbPastTense]:
+    # Extend a base DomainEvent class from your shared kernel.
+    # The base typically provides:
+    #   - eventId (unique per event instance)
+    #   - aggregateId (which aggregate this event belongs to)
+    #   - occurredOn (timestamp when the event was recorded)
+    #   - eventName() (returns the event type as a string)
+
+    # --- Additional Properties ---
+    # Add properties that subscribers need to react to this event.
+    # These are specific to what happened.
+
+    property [additionalField]: [Type]
+    property [anotherField]: [Type]
+
+    # --- Constructor ---
+    constructor(
+        aggregateId: [AggregateName]Id,
+        [additionalField]: [Type],
+        eventId: Uuid = null,
+        occurredOn: DateTime = null
+    ):
+        super(aggregateId, eventId, occurredOn)
+        self.[additionalField] = [additionalField]
+
+    # --- Event Name ---
+    # Returns a unique string identifying this event type.
+    # Used for routing events to subscribers.
+    # Convention: dot-separated, lowercase. Example: "mooc.course.created"
+
+    static eventName(): string
+        return "[context].[aggregate].[verb-past-tense]"
+
+    # --- Serialization ---
+    # Events need to be serializable for:
+    #   - Storing in event store / outbox
+    #   - Publishing to message brokers
+    #   - Rehydration (event sourcing)
+
+    method toPrimitives(): map
+        base = super.toPrimitives()  # Gets id, aggregateId, occurredOn, eventName
+        base.[additionalField] = self.[additionalField].value()  # Convert VOs to primitives
+        return base
+
+    static fromPrimitives(
+        aggregateId: string,
+        body: map,
+        eventId: string,
+        occurredOn: string
+    ): [AggregateName][VerbPastTense]
+        return new [AggregateName][VerbPastTense](
+            aggregateId: [AggregateName]Id.fromValue(aggregateId),
+            [additionalField]: [Type].fromValue(body.[additionalField]),
+            eventId: Uuid.fromValue(eventId),
+            occurredOn: DateTime.parse(occurredOn)
+        )
+
+# ============================================
+# RECORDING EVENTS IN THE AGGREGATE
+# ============================================
+
+class [AggregateName]:
+    # Inside the aggregate, record events when state changes:
+
+    method [someBusinessOperation]():
+        # ... business logic ...
+        self.record(new [AggregateName][VerbPastTense](
+            aggregateId: self.id,
+            [additionalField]: self.[field]
+        ))
+
+# ============================================
+# PUBLISHING EVENTS (in CommandHandler)
+# ============================================
+
+class [SomeCommandHandler]:
+    method invoke(command):
+        aggregate = self.repository.findById(command.aggregateId)
+        aggregate.[someBusinessOperation]()
+        self.repository.save(aggregate)
+        # Publish AFTER successful persistence
+        self.eventBus.publish(aggregate.pullEvents())
+
+# ============================================
+# KEY RULES
+# ============================================
+# 1. Name in PAST TENSE: CourseCreated, PaymentReceived, OrderShipped
+# 2. IMMUTABLE - all properties set in constructor, no setters
+# 3. Carry WHAT happened, not HOW to react
+# 4. Include enough data for subscribers (but not the whole aggregate)
+# 5. Record in aggregate, publish in handler after persistence
+# 6. Each event has: eventId, aggregateId, occurredOn, eventName + specific data
+# 7. Never modify an event after creation
+# 8. eventName() MUST be unique per event type (used for routing)

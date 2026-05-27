@@ -1,0 +1,92 @@
+# Value Object Template (language-agnostic pseudocode)
+#
+# Use this template when creating a new Value Object in the Domain layer.
+# Value Objects:
+#   - Are defined by their attributes (no identity)
+#   - Are IMMUTABLE (no setters, no mutation methods)
+#   - Equality by all properties (structural equality)
+#   - Can be replaced, but never modified
+#   - Validate their own invariants
+
+class [ValueObjectName]:
+    # --- Properties ---
+    # All properties should be private and set only in the constructor.
+    property value: [UnderlyingType]  # string, int, float, or another Value Object
+
+    # --- Constructor ---
+    # Validates invariants at creation time.
+    # Throws a domain error if the value is invalid.
+
+    constructor(value):
+        self.ensureValid(value)
+        self.value = value
+
+    # --- Validation ---
+    # Private method. Every Value Object validates itself.
+
+    private method ensureValid(value):
+        if value is empty/invalid:
+            throw new [ValueObjectName]InvalidError(value)
+        # Add specific validation rules here
+        # Example: length constraints, format validation, range checks
+
+    # --- Accessor ---
+    # Provides the raw value when needed (e.g., for persistence).
+    # Method name should match the concept (not just "getValue").
+
+    method value(): [UnderlyingType]
+        return self.value
+
+    # --- Equality ---
+    # Value Objects are equal if all their properties are equal.
+
+    method equals(other): bool
+        return self.value == other.value
+
+    # --- String Representation ---
+    method toString(): string
+        return str(self.value)
+
+    # --- Serialization Helpers ---
+    # For persistence adapters to convert.
+    # Keep these simple - adapters do the actual mapping.
+
+    static fromValue(value): [ValueObjectName]
+        return new [ValueObjectName](value)
+
+# --- Common Value Object Examples ---
+
+# ID Value Object (extends a base Uuid or similar)
+class [EntityName]Id extends BaseUuid:
+    # Inherits UUID validation and generation
+    # May add context-specific rules
+    pass
+
+# String-based Value Object
+class CourseName:
+    property value: string
+
+    private method ensureValid(value):
+        if value is empty:
+            throw InvalidCourseName("Course name cannot be empty")
+        if len(value) < 3:
+            throw InvalidCourseName("Course name must be at least 3 characters")
+        if len(value) > 100:
+            throw InvalidCourseName("Course name must be at most 100 characters")
+
+# Numeric Value Object
+class PositivePrice:
+    property value: float
+
+    private method ensureValid(value):
+        if value < 0:
+            throw InvalidPrice("Price cannot be negative")
+        if value > 999999.99:
+            throw InvalidPrice("Price exceeds maximum allowed")
+
+# --- Key Rules ---
+# 1. IMMUTABLE - no setters, no mutation methods, all properties private
+# 2. Self-validating - constructor validates, throws domain errors
+# 3. Structural equality - equals() compares all properties
+# 4. Can be freely shared (no identity, immutable = safe to share references)
+# 5. Replace, don't modify: entity.name = CourseName("new name"), NOT entity.name.setValue("new name")

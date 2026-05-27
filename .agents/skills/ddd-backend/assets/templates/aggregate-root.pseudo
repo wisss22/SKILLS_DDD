@@ -1,0 +1,146 @@
+# Aggregate Root Template (language-agnostic pseudocode)
+#
+# Use this template when creating a new Aggregate Root in the Domain layer.
+# Aggregate Roots:
+#   - Are the entry point to a consistency boundary
+#   - Enforce invariants for ALL entities within the boundary
+#   - Are the ONLY entity that gets a Repository
+#   - Other aggregates reference it by ID only
+#   - One aggregate = one transaction boundary
+
+class [AggregateName]:
+    # Extend an AggregateRoot base class if available in your shared kernel.
+    # The base class typically provides: ID, domain event recording, equality.
+
+    # --- Identity ---
+    property id: [AggregateName]Id
+
+    # --- Child Entities ---
+    # Child entities are accessed ONLY through the aggregate root.
+    # They should NOT have their own repositories.
+    property items: Collection<ChildEntity>     # Child entity collection
+    property details: DetailValueObject         # Child value object (or entity)
+
+    # --- Attributes ---
+    property status: [Status]
+    property createdAt: DateTime
+    property updatedAt: DateTime
+
+    # --- Constructor ---
+    # Private. Use named factory methods for creation.
+    private constructor(id, ...):
+        self.id = id
+        self.items = new Collection()
+        self.status = [InitialStatus]
+        self.createdAt = now()
+        self.updatedAt = now()
+
+    # --- Factory Methods ---
+    static create(id, ...): [AggregateName]
+        # Validate creation invariants
+        aggregate = new [AggregateName](id, ...)
+        aggregate.record(new [AggregateName]Created(aggregate.id, ...))
+        return aggregate
+
+    # --- Behavior: Modify Root ---
+    method changeStatus(newStatus):
+        ensure transition from self.status to newStatus is valid
+        self.status = newStatus
+        self.updatedAt = now()
+        self.record(new [AggregateName]StatusChanged(self.id, newStatus))
+
+    # --- Behavior: Manage Child Entities ---
+    # All modifications to child entities go through the root.
+    # This ensures invariants that span the aggregate are enforced.
+
+    method addItem(itemData):
+        ensure not self.isArchived()
+        ensure no duplicate item
+        item = ChildEntity.create(itemData)
+        self.items.add(item)
+        self.updatedAt = now()
+        self.record(new [AggregateName]ItemAdded(self.id, item.id, item.summary()))
+
+    method removeItem(itemId):
+        ensure not self.isArchived()
+        item = self.items.findById(itemId)
+        self.items.remove(item)
+        self.updatedAt = now()
+        self.record(new [AggregateName]ItemRemoved(self.id, itemId))
+
+    method updateItem(itemId, newData):
+        ensure not self.isArchived()
+        item = self.items.findById(itemId)
+        item.update(newData)
+        self.updatedAt = now()
+
+    # --- Behavior: Complete Lifecycle ---
+    method archive():
+        ensure self.status != [ArchivedStatus]
+        ensure self.items are all completed/canceled
+        self.status = [ArchivedStatus]
+        self.updatedAt = now()
+        self.record(new [AggregateName]Archived(self.id))
+
+    # --- Queries ---
+    # Simple derived properties. For complex queries, use QueryHandlers.
+
+    method isArchived(): bool
+        return self.status == [ArchivedStatus]
+
+    method itemCount(): int
+        return self.items.length
+
+    method totalAmount(): Money
+        return self.items.sum(item => item.price)
+
+    # --- Serialization ---
+    method toPrimitives(): map
+        return {
+            id: self.id.value(),
+            status: self.status.value(),
+            items: self.items.map(item => item.toPrimitives()),
+            createdAt: self.createdAt,
+            updatedAt: self.updatedAt
+        }
+
+    static fromPrimitives(data): [AggregateName]
+        aggregate = new [AggregateName]([AggregateName]Id.fromValue(data.id))
+        aggregate.status = Status.fromValue(data.status)
+        aggregate.items = data.items.map(item => ChildEntity.fromPrimitives(item))
+        return aggregate
+
+# --- Child Entity (inside the same aggregate) ---
+class ChildEntity:
+    property id: ChildEntityId
+    property name: string
+    property price: Money
+    property quantity: int
+
+    private constructor(id, name, price, quantity):
+        self.id = id
+        self.name = name
+        self.price = price
+        self.quantity = quantity
+
+    static create(data): ChildEntity
+        return new ChildEntity(
+            ChildEntityId.generate(),
+            data.name,
+            data.price,
+            data.quantity
+        )
+
+    method update(data):
+        self.name = data.name
+        self.price = data.price
+        self.quantity = data.quantity
+
+# --- Key Rules ---
+# 1. ONE aggregate per transaction
+# 2. ALL child entity modifications go through the root
+# 3. Reference OTHER aggregates by ID only (no object references)
+# 4. Repository exists ONLY for the aggregate root
+# 5. Cross-aggregate consistency = domain events
+# 6. Keep aggregates SMALL (aim for <8-10 entities)
+# 7. Design for eventual consistency between aggregates

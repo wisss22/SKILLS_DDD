@@ -1,0 +1,106 @@
+# Entity Template (language-agnostic pseudocode)
+#
+# Use this template when creating a new Entity in the Domain layer.
+# Entities have:
+#   - A unique identity (ID) that persists over time
+#   - Equality by ID (same ID = same entity)
+#   - Behavior methods (not just getters/setters)
+#   - They can be mutable within a transaction
+
+class [EntityName]:
+    # --- Identity ---
+    # ID is the unique identifier. Use a Value Object for the ID type.
+    property id: [EntityName]Id  # Value Object wrapping the actual ID (UUID, numeric, etc.)
+
+    # --- Attributes ---
+    # Use Value Objects for attributes with domain rules.
+    property name: [ValueObjectType]
+    property status: [StatusEnum]
+    property createdAt: DateTime
+    property updatedAt: DateTime
+
+    # --- Constructor ---
+    # Private constructor forces creation through named factory methods.
+    # This ensures all business invariants are satisfied at creation time.
+    private constructor(id, name, ...):
+        self.id = id
+        self.name = name
+        self.status = [InitialStatus]
+        self.createdAt = now()
+        self.updatedAt = now()
+
+    # --- Named Factory Methods ---
+    # Use static factory methods that express business intent.
+    # The method name tells you WHAT is happening (domain language).
+
+    static create(id, name, ...): [EntityName]
+        # Validate invariants before creation
+        ensure name is not empty
+        ensure any business rules are satisfied
+
+        entity = new [EntityName](id, name, ...)
+        entity.record(new [EntityName]Created(entity.id, entity.name, ...))
+        return entity
+
+    # --- Behavior Methods ---
+    # Methods named after business operations.
+    # Each method enforces its own invariants.
+    # Record domain events when significant state changes occur.
+
+    method rename(newName):
+        ensure newName is not empty
+        self.name = newName
+        self.updatedAt = now()
+        self.record(new [EntityName]Renamed(self.id, newName))
+
+    method archive():
+        ensure self.status is not already [ArchivedStatus]
+        self.status = [ArchivedStatus]
+        self.updatedAt = now()
+        self.record(new [EntityName]Archived(self.id))
+
+    # --- Identity Equality ---
+    # Entities are equal if they have the same ID.
+
+    method equals(other): bool
+        return self.id.equals(other.id)
+
+    # --- Domain Event Recording ---
+    # Aggregate Roots record events to be published after successful persistence.
+
+    method record(event):
+        self.events.append(event)
+
+    method pullEvents(): list
+        events = self.events.copy()
+        self.events.clear()
+        return events
+
+    # --- Serialization (for persistence) ---
+    # Convert to/from primitives for storage adapters.
+    # These should NOT be in the Domain layer if using an ORM -
+    #   let the adapter handle mapping.
+
+    method toPrimitives(): map
+        return {
+            id: self.id.value(),
+            name: self.name.value(),
+            status: self.status.value(),
+            createdAt: self.createdAt,
+            updatedAt: self.updatedAt
+        }
+
+    static fromPrimitives(data): [EntityName]
+        return new [EntityName](
+            [EntityName]Id.fromValue(data.id),
+            [ValueObjectType].fromValue(data.name),
+            ...
+        )
+
+# --- Key Rules ---
+# 1. NO framework annotations on the entity
+# 2. NO database-specific types or imports
+# 3. Business logic goes HERE, not in services
+# 4. Use Value Objects for all typed attributes
+# 5. Private constructor + named factory methods
+# 6. Record domain events on significant state changes
