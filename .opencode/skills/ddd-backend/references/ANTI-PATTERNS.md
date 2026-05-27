@@ -179,3 +179,19 @@ Errores comunes al aplicar DDD, CQRS y Arquitectura Hexagonal. Cada anti-patrón
 | **Por qué duele** | Acopla aggregates. Crea contención. Viola los límites del aggregate. Puede causar deadlocks. |
 | **Solución** | Una transacción por modificación de aggregate. Usa domain events para consistencia eventual entre aggregates. |
 | **Detección** | Método de repository que guarda dos tipos diferentes de aggregate. Transacción que abarca múltiples llamadas a `repository.save()`. |
+
+### Shared como Cajón de Sastre
+| Aspecto | Descripción |
+|---|---|
+| **Problema** | Todo termina en `Shared/` sin criterio: value objects de un solo BC, utilidades sueltas, configuraciones, lógica de negocio. La carpeta crece descontroladamente. |
+| **Por qué duele** | Shared se convierte en un "god module". El acoplamiento se dispara porque todos los BCs dependen de todo. Cambiar cualquier cosa en Shared puede romper múltiples BCs. |
+| **Solución** | Aplica la regla de oro: ¿este código es idéntico y cambia por las mismas razones en TODOS los BCs que lo usan? Si la respuesta es no, no va en Shared. Revisa periódicamente qué clases de Shared se usan realmente en 2+ BCs. |
+| **Detección** | Carpeta `Shared/` con >30 archivos. Clases en Shared que solo son importadas por un BC. Value Objects de negocio (`CourseName`, `OrderStatus`) en Shared. |
+
+### Lógica de Negocio en Shared Domain
+| Aspecto | Descripción |
+|---|---|
+| **Problema** | `Shared/Domain/` contiene servicios de dominio, reglas de validación específicas de un BC, o entidades con lógica de negocio concreta. |
+| **Por qué duele** | Viola el bounded context. Shared Domain se acopla a conceptos de negocio que deberían ser privados de cada BC. Un cambio en una regla de negocio de Mooc obliga a modificar Shared, afectando potencialmente a Backoffice. |
+| **Solución** | Shared Domain solo contiene clases base abstractas sin lógica de negocio específica. Si una regla de negocio pertenece a un BC, vive en el Domain de ese BC. Si dos BCs necesitan una regla similar, evalúa si realmente es la misma regla o si cada BC debe tener la suya. |
+| **Detección** | `PricingService`, `FraudDetector`, `InventoryValidator` dentro de `Shared/Domain/`. Clases en Shared que contienen `if` basados en conceptos de un BC concreto. Value Objects con nombres de dominio específicos en Shared. |

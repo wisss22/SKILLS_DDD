@@ -67,6 +67,7 @@ Catálogo completo de todos los patrones de diseño cubiertos por el ecosistema 
 | Patrón | Qué Es | Sub-Skill |
 |---|---|---|
 | **Dependency Injection** | Conecta ports a adapters al iniciar | `ddd-entrypoints` |
+| **Shared Kernel** | Código compartido entre bounded contexts del mismo equipo: clases base, interfaces, utilidades | `ddd-backend` |
 | **Module Structure** | Organiza el código por bounded context y módulos | Consulta `DECISION-TREE.md` |
 | **Monorepo Structure** | Múltiples aplicaciones compartiendo código de dominio | `ddd-entrypoints` |
 

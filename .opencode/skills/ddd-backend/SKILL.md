@@ -39,6 +39,7 @@ Este skill es solo un **router**. No contiene reglas de implementación. Todas l
 | [references/DECISION-TREE.md](references/DECISION-TREE.md) | No estás seguro de dónde pertenece un fragmento de código |
 | [references/PATTERNS-CATALOG.md](references/PATTERNS-CATALOG.md) | Necesitas ver todos los patrones disponibles de un vistazo |
 | [references/ANTI-PATTERNS.md](references/ANTI-PATTERNS.md) | Algo huele mal en el código base |
+| [references/SHARED-KERNEL.md](references/SHARED-KERNEL.md) | Necesitas estructurar la carpeta shared/ o decidir qué compartir entre bounded contexts |
 
 ## Plantillas
 
